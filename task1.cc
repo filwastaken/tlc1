@@ -223,7 +223,35 @@ int main(int argc, char* argv[]) {
 
   // Ascii tracing must be done on client and servers only! It must be defined in the configuration part
   if(configuration == 0){
-    //TODO HERE
+    //TCP - sink on n5, 2300 port
+    //TCP OnOff client on n9 {start_send : 3s, stop_send : 15s, packet_size : 1300bytes}
+
+    //Sink on n5 -> center of the star!
+    uint16_t port = 2300;
+    Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
+    PacketSinkHelper sinkHelper("ns3::TcpSocketFactory", sinkLocalAddress);
+
+    ApplicationContainer sinkApp = sinkHelper.Install(n5);
+    sinkApp.Start(Seconds(0.0));
+    sinkApp.Stop(Seconds(20.0));
+
+    // Create the OnOff applications to send TCP to the server on n9
+    OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
+    clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
+    clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+    clientHelper.SetAttribute("PacketSize", UintegerValue(1024));
+
+    ApplicationContainer server;
+    AddressValue remoteAddress(InetSocketAddress(right_interface.GetAddress(1), port)); //n7 is still the last one, getting the 2nd
+    clientHelper.SetAttribute("Remote", remoteAddress);
+    server.Add(clientHelper.Install(n9));
+
+    server.Start(Seconds(3.0));
+    server.Stop(Seconds(15.0));
+
+    // configure tracing
+    AsciiTraceHelper ascii;
+    right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n9.tr"), right_container.Get(1));
 
   } else if(configuration == 1){
     //TODO HERE
