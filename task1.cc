@@ -1,9 +1,9 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * 
- * 
+ *
+ *
  * Network topology
- * 
+ *
  *                        n4
  *                      / |  \
  *                     /  |   \
@@ -11,26 +11,26 @@
  * |    |    |         \  |   /  |     |      |
  * ===========          \ |  /   ==============
  *     LAN                n6            LAN
- * 
- * 
- * 
+ *
+ *
+ *
  *  # pcap tracking is active on nodes n0, n3 and n7
  *  # ascii is active only on servers and clients (defined in the configuration section)
  *      the traces follow this format:  task1-<configuration>-<id_del_nodo>.<formato_file_richiesto(.pcap|.tr)>
- * 
+ *
  * -- configuration 0:
- * 
- * 
- * 
+ *
+ *
+ *
  * -- configuration 1:
- * 
- * 
- * 
+ *
+ *
+ *
  * -- configuration 2:
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
 */
 
 #include "ns3/applications-module.h"
@@ -44,17 +44,17 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE("Homework1");
+NS_LOG_COMPONENT_DEFINE("Task_1_Team_25");
 int main(int argc, char* argv[]) {
   /**
-   * 
-   * Usage: ./ns3 run "pathtofolder" "filename" --configuration=[0|1|2] [--verbose]
-   * 
-   * 
+   *
+   * Usage: ./ns3 run <pathtofolder>/task1.cc [--configuration=[0|1|2]] [--verbose]
+   *
+   *
   */
 
   int configuration = 0; //by defualt configuration is set to 0.
-  bool verbose = false; //be default verbose is set to false
+  bool verbose = false;  //by default verbose is set to false
 
   CommandLine cmd(__FILE__);
   cmd.AddValue("configuration", "Start with a particular configuration, 0 is default. (0, 1 or 2) are available",configuration);
@@ -73,9 +73,9 @@ int main(int argc, char* argv[]) {
   }
 
   /**
-   * 
+   *
    * Node creations
-   * 
+   *
   */
   NS_LOG_INFO("Create nodes.");
   //Creating nodes
@@ -114,9 +114,9 @@ int main(int argc, char* argv[]) {
   nodes_right.Add(shared); //added n7 to nodes_right
 
   /**
-   * 
+   *
    * Channel creation (Hardware side)
-   * 
+   *
   */
   NS_LOG_INFO("Create channels.");
   //Left hardware (CMSA)
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
   *   n3 - n6
   *   n4 - n7
   *   n6 - n7
-  * 
+  *
   */
   // Creating multiple containers for the p2p network installation
 
@@ -157,9 +157,9 @@ int main(int argc, char* argv[]) {
   l_connections.SetChannelAttribute("Delay", StringValue("5us"));
 
   /**
-   * 
+   *
    * Creating Net device containers for the given nodes and p2p instances
-   * 
+   *
   */
   NetDeviceContainer left_container = left_csma.Install(nodes_left);
   NetDeviceContainer right_container = right_csma.Install(nodes_right);
@@ -171,9 +171,9 @@ int main(int argc, char* argv[]) {
 
 
   /**
-   * 
+   *
    * Ip-Address(ing)
-   * 
+   *
   */
   NS_LOG_INFO("Assign IP Addresses.");
   Ipv4AddressHelper left_ipv4; //Ipv4 left lan connection
@@ -201,9 +201,9 @@ int main(int argc, char* argv[]) {
 
 
   /**
-   * 
+   *
    * Creating Ipv4 Interface Containers for every connection (other than the star, since it doesn't need it)
-   * 
+   *
   */
   Ipv4InterfaceContainer right_interface = right_ipv4.Assign(right_container);
   Ipv4InterfaceContainer left_interface = left_ipv4.Assign(left_container);
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
   star.AssignIpv4Addresses(Ipv4AddressHelper("10.10.1.0", "/24")); //Ipv4 star connection
 
 
-  
+
   // Enabling packet tracing for n0, n3, n7
   left_csma.EnablePcap("n0_pcap_", left_container.Get(0)); //n0 is the first one on left_csma
   n2n3_connection.EnablePcap("n3_pcap_", n2n3_container.Get(1)); //n3 is the lastone on the n2n3 connection
@@ -223,35 +223,8 @@ int main(int argc, char* argv[]) {
 
   // Ascii tracing must be done on client and servers only! It must be defined in the configuration part
   if(configuration == 0){
-    //TCP - sink on n5, 2300 port
-    //TCP OnOff client on n9 {start_send : 3s, stop_send : 15s, packet_size : 1300bytes}
+    //TODO HERE
 
-    //Sink on n5 -> center of the star!
-    uint16_t port = 2300;
-    Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
-    PacketSinkHelper sinkHelper("ns3::TcpSocketFactory", sinkLocalAddress);
-
-    ApplicationContainer sinkApp = sinkHelper.Install(n5);
-    sinkApp.Start(Seconds(0.0));
-    sinkApp.Stop(Seconds(20.0));
-
-    // Create the OnOff applications to send TCP to the server on n9
-    OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
-    clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-    clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    clientHelper.SetAttribute("PacketSize", UintegerValue(1024));
-
-    ApplicationContainer server;
-    AddressValue remoteAddress(InetSocketAddress(right_interface.GetAddress(1), port)); //n7 is still the last one, getting the 2nd
-    clientHelper.SetAttribute("Remote", remoteAddress);
-    server.Add(clientHelper.Install(n9));
-
-    server.Start(Seconds(3.0));
-    server.Stop(Seconds(15.0));
-
-    // configure tracing
-    AsciiTraceHelper ascii;
-    right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n9.tr"), right_container.Get(1));
   } else if(configuration == 1){
     //TODO HERE
 
@@ -261,9 +234,9 @@ int main(int argc, char* argv[]) {
   }
 
   /**
-   * 
+   *
    * Running the simulation
-   * 
+   *
   */
 
   NS_LOG_INFO("Run Simulation.");
