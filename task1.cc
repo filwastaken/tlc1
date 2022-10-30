@@ -1,4 +1,3 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
  *
  *
@@ -78,8 +77,8 @@ int main(int argc, char* argv[]) {
    *
   */
   NS_LOG_INFO("Create nodes.");
-  //Creating nodes
 
+  //Creating nodes
   Ptr<Node> n0 = CreateObject<Node>();
   Ptr<Node> n1 = CreateObject<Node>();
   Ptr<Node> n2 = CreateObject<Node>();
@@ -103,10 +102,9 @@ int main(int argc, char* argv[]) {
   Ptr<Node> n4 = star.GetSpokeNode(1);
   Ptr<Node> n6 = star.GetSpokeNode(2);
   Ptr<Node> n7 = star.GetSpokeNode(3); //pointer to n7 to be added to nodes_right
-
   InternetStackHelper internet_helper;
   internet_helper.Install(nodes_left);
-  internet_helper.Install(nodes_right);   // Reversing Internet installation and n7 sharing to prevent internet installation twice on n7
+  internet_helper.Install(nodes_right); // Reversing Internet installation and n7 sharing to prevent internet installation twice on n7
   star.InstallStack(internet_helper);
 
   // n7 sharing
@@ -161,6 +159,7 @@ int main(int argc, char* argv[]) {
    * Creating Net device containers for the given nodes and p2p instances
    *
   */
+
   NetDeviceContainer left_container = left_csma.Install(nodes_left);
   NetDeviceContainer right_container = right_csma.Install(nodes_right);
   NetDeviceContainer n2n3_container = n2n3_connection.Install(n2_n3);
@@ -199,6 +198,8 @@ int main(int argc, char* argv[]) {
   Ipv4AddressHelper n6n7_address;
   n6n7_address.SetBase("10.0.3.0", "/30");
 
+  Ipv4AddressHelper star_address;
+  star_address.SetBase("10.10.1.0", "/24");
 
   /**
    *
@@ -212,14 +213,17 @@ int main(int argc, char* argv[]) {
   Ipv4InterfaceContainer n3n6_interface = n3n6_address.Assign(n3n6_container);
   Ipv4InterfaceContainer n4n7_interface = n4n7_address.Assign(n4n7_container);
   Ipv4InterfaceContainer n6n7_interface = n6n7_address.Assign(n6n7_container);
-  star.AssignIpv4Addresses(Ipv4AddressHelper("10.10.1.0", "/24")); //Ipv4 star connection
+  //star.AssignIpv4Addresses(star_address); //Ipv4 star connection
+
+  //With this the all the nodes will ne able to reach the other reachables
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
   /**
   *
   *
   * Container order (to recap)
   * left: n0, n1, n2
-  * star: n3, n4, n6, n7 (outer) - n5 hub
+  * star: n3, n4, n6, n7 (outer) - n5 (hub)
   * right: n8, n9, n7 (7 is the last one since it got added last. It is shared between star and right).
   *
   *
@@ -235,30 +239,27 @@ int main(int argc, char* argv[]) {
     Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
     PacketSinkHelper sinkHelper("ns3::TcpSocketFactory", sinkLocalAddress);
 
-    ApplicationContainer sinkApp = sinkHelper.Install(n5);
+    ApplicationContainer sinkApp = sinkHelper.Install(n0);
     sinkApp.Start(Seconds(0.0));
-    sinkApp.Stop(Seconds(20.0));
+    sinkApp.Stop(Seconds(20.0)); // I chose 20 since it's the simulation maximum time
 
-    // Create the OnOff applications to send TCP to the server on n9
+    // Create the OnOff applications to send TCP to the sender on n9
     OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
     clientHelper.SetAttribute("PacketSize", UintegerValue(1024));
 
-    ApplicationContainer server;
-    AddressValue remoteAddress(InetSocketAddress(right_interface.GetAddress(1), port)); //n7 is still the last one, getting the 2nd
+    ApplicationContainer sender;
+    AddressValue remoteAddress(InetSocketAddress(left_interface.GetAddress(0), port)); //sending to hub from the pov of 7th node
     clientHelper.SetAttribute("Remote", remoteAddress);
-    server.Add(clientHelper.Install(n9));
+    sender.Add(clientHelper.Install(n8));
 
-    server.Start(Seconds(3.0));
-    server.Stop(Seconds(15.0));
+    sender.Start(Seconds(3.0));
+    sender.Stop(Seconds(15.0));
 
     // configure tracing
     AsciiTraceHelper ascii;
     right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n9.tr"), right_container.Get(1));
-
-
-
 
     // Enabling packet tracing for n0, n3, n7
     left_csma.EnablePcap("task1-0-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
