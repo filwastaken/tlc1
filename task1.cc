@@ -214,23 +214,44 @@ int main(int argc, char* argv[]) {
   Ipv4InterfaceContainer n6n7_interface = n6n7_address.Assign(n6n7_container);
   star.AssignIpv4Addresses(Ipv4AddressHelper("10.10.1.0", "/24")); //Ipv4 star connection
 
-
-
-  // Enabling packet tracing for n0, n3, n7
-  left_csma.EnablePcap("n0_pcap_", left_container.Get(0)); //n0 is the first one on left_csma
-  n2n3_connection.EnablePcap("n3_pcap_", n2n3_container.Get(1)); //n3 is the lastone on the n2n3 connection
-  right_csma.EnablePcap("n7_pcap_", right_container.Get(2)); //I'm getting the last one since 7 is the one i added last
+  /**
+  *
+  *
+  * Container order (to recap)
+  * left: n0, n1, n2
+  * star: n3, n4, n6, n7 (outer) - n5 hub
+  * right: n8, n9, n7 (7 is the last one since it got added last. It is shared between star and right).
+  *
+  *
+  */
 
   // Ascii tracing must be done on client and servers only! It must be defined in the configuration part
   if(configuration == 0){
     //TODO HERE
 
+
+
+
+    // Enabling packet tracing for n0, n3, n7
+    left_csma.EnablePcap("task1-0-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
+    n2n3_connection.EnablePcap("task1-0-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3 connection
+    right_csma.EnablePcap("task1-0-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
   } else if(configuration == 1){
     //TODO HERE
 
+
+
+    // Enabling packet tracing for n0, n3, n7
+    left_csma.EnablePcap("task1-1-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
+    n2n3_connection.EnablePcap("task1-1-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3 connection
+    right_csma.EnablePcap("task1-1-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
   } else if(configuration == 2){
     //TODO HERE
 
+    // Enabling packet tracing for n0, n3, n7
+    left_csma.EnablePcap("task1-2-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
+    n2n3_connection.EnablePcap("task1-2-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3 connection
+    right_csma.EnablePcap("task1-2-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
   }
 
   /**
@@ -238,7 +259,6 @@ int main(int argc, char* argv[]) {
    * Running the simulation
    *
   */
-
   NS_LOG_INFO("Run Simulation.");
   Simulator::Stop(Seconds(20.0));
   Simulator::Run();
