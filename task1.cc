@@ -7,9 +7,9 @@
  *                      / |  \
  *                     /  |   \
  * n0   n1   n2 --- n3 -- n5 -- n7    n8     n9
- * |    |    |         \  |   /  |     |      |               (connection n3-n4 and n6-n7 removed due to an error)
+ * |    |    |         \  |   /  |     |      |
  * ===========          \ |  /   ==============
- *     LAN                n6            LAN
+ *     LAN                n6          LAN
  *
  *
  *
@@ -19,18 +19,32 @@
  *
  * -- configuration 0:
  *    TCP sink on n5, port 2300
- *    TCPOnOffClient on n9, start at 3s, stops at 15s and packet size = 1300bytes
+ *    TCPOnOffClient on n9 {start_send : 3s, stop_send : 15s, packet_size : 1300bytes}
+ *
+ *    n9 -> n5 (n9 sends to n5)
  *
  * -- configuration 1:
- *
- *
+ *    TCP sink on n5, port 2300
+ *    TCP sink on n0, port 7457
+ *    TCPOnOffClient on n9 {start_send : 5s, stop_send : 15s, packet_size : 3000bytes}
+ *    TCPOnOffClient on n8 {start_send : 2s, stop_send : 9s, packet_size : 2500bytes}
+ *    n9 -> n5;   n8 -> n0
  *
  * -- configuration 2:
+ *    UDP echo on n8 -> n2
+ *    TCP sink n9 -> n5
+ *    UDP sink n8 -> n0
  *
  *
- *
+ *    Fatto da: Group 25
+ *    matricole:
+ *      - 
+ *      - 
+ *      - 
+ *      - 
  *
 */
+
 
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
@@ -47,7 +61,7 @@ NS_LOG_COMPONENT_DEFINE("Task_1_Team_25");
 int main(int argc, char* argv[]) {
   /**
    *
-   * Usage: ./ns3 run <pathtofolder>/task1.cc [--configuration=[0|1|2]] [--verbose]
+   * Usage: ./ns3 run <pathtofolder>/task1.cc [-- [--configuration=[0|1|2]] [--verbose]]
    *
    *
   */
@@ -218,11 +232,10 @@ int main(int argc, char* argv[]) {
   /**
   *
   *
-  * Container order (to recap)
+  * Containers order (to recap)
   * left: n0, n1, n2
   * star: n3, n4, n6, n7 (outer) - n5 (hub)
   * right: n8, n9, n7 (7 is the last one since it got added last. It is shared between star and right).
-  *
   *
   */
 
@@ -244,7 +257,7 @@ int main(int argc, char* argv[]) {
     OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    clientHelper.SetAttribute("PacketSize", UintegerValue(1300));   /*Double check packet size*/
+    clientHelper.SetAttribute("PacketSize", UintegerValue(1300));
 
     ApplicationContainer sender;
     AddressValue remoteAddress(InetSocketAddress(star.GetHubIpv4Address(3), port));
@@ -263,18 +276,21 @@ int main(int argc, char* argv[]) {
     n2n3_connection.EnablePcap("task1-0-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3 connection
     right_csma.EnablePcap("task1-0-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
   } else if(configuration == 1){
-    //TCP - sink on n5, 2300 port
-    //TCP - sink on n0, 7457 port
-    //TCP OnOff client on n9 {start_send : 5s, stop_send : 15s, packet_size : 3000bytes}
-    //TCP OnOff client on n8 {start_send : 2s, stop_send : 9s, packet_size : 2500bytes}
-    //n9 -> n5    n8 -> n0
-    uint16_t n5_portnumber=2300, n0_portnumber=7457;
+    /* TCP - sink on n5, 2300 port
+    * TCP - sink on n0, 7457 port
+    * TCP OnOff client on n9 {start_send : 5s, stop_send : 15s, packet_size : 3000bytes}
+    * TCP OnOff client on n8 {start_send : 2s, stop_send : 9s, packet_size : 2500bytes}
+    * n9 -> n5    n8 -> n0
+    */
+
+    uint16_t n5_portnumber = 2300, n0_portnumber = 7457;
     Address n5_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n5_portnumber));
     Address n0_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n0_portnumber));
     PacketSinkHelper n5_Sink("ns3::TcpSocketFactory", n5_sinkLocalAddress);
     PacketSinkHelper n0_Sink("ns3::TcpSocketFactory", n0_sinkLocalAddress);
-    ApplicationContainer n5_sinkApp=n5_Sink.Install(n5);
-    ApplicationContainer n0_sinkApp=n0_Sink.Install(n0);
+    ApplicationContainer n5_sinkApp = n5_Sink.Install(n5);
+    ApplicationContainer n0_sinkApp = n0_Sink.Install(n0);
+    
     //Sink Application Code
     n5_sinkApp.Start(Seconds(0.0));
     n0_sinkApp.Start(Seconds(0.0));
@@ -308,11 +324,11 @@ int main(int argc, char* argv[]) {
     n9_Sender.Stop(Seconds(15.0));
     n8_Sender.Stop(Seconds(9.0));
     
-    AsciiTraceHelper ascii; //I create the helper for the ascii
-    //star.EnableAscii(ascii.CreateFileStream("task1-1-n5.tr"),star.GetHub());  //I trace n5
-    left_csma.EnableAscii(ascii.CreateFileStream("task1-1-n0.tr"),left_container.Get(0));  //I trace n0
-    right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n9.tr"), right_container.Get(1)); //I trace n9
-    right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n8.tr"), right_container.Get(0));  //I trace n8
+    AsciiTraceHelper ascii;
+    //star.EnableAscii(ascii.CreateFileStream("task1-1-n5.tr"), star.GetHub());               //Tracing n5
+    left_csma.EnableAscii(ascii.CreateFileStream("task1-1-n0.tr"), left_container.Get(0));    //Tracing n0
+    right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n9.tr"), right_container.Get(1));  //  "     n9
+    right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n8.tr"), right_container.Get(0));  //  "     n8
      
     // Enabling packet tracing for n0, n3, n7
     left_csma.EnablePcap("task1-1-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
@@ -320,13 +336,13 @@ int main(int argc, char* argv[]) {
     right_csma.EnablePcap("task1-1-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
   } else if(configuration == 2){
     /*
-       UDPecho n8 -> n2
-       TCPsink n9 -> n5
-       UDPsink n8 -> n0
+    *  UDPecho n8 -> n2
+    *  TCPsink n9 -> n5
+    *  UDPsink n8 -> n0
     */
-    uint16_t n2_port=63;
+    uint16_t n2_port = 63;
     UdpEchoServerHelper n2_Server(n2_port);
-    ApplicationContainer n2_Server_App=n2_Server.Install(n2);
+    ApplicationContainer n2_Server_App = n2_Server.Install(n2);
     
     n2_Server_App.Start(Seconds(0.0));
     n2_Server_App.Stop(Seconds(20.0));
@@ -335,20 +351,21 @@ int main(int argc, char* argv[]) {
     n8_Client.SetAttribute("Interval", TimeValue(Seconds(2.0))); 
     n8_Client.SetAttribute("PacketSize", UintegerValue(2560));
     //trovare metodo per inserire il testo nei pacchetti
-    ApplicationContainer n8_Client_App=n8_Client.Install(n8);
+    ApplicationContainer n8_Client_App = n8_Client.Install(n8);
+    
     n8_Client_App.Start(Seconds(1.0)); //faccio partire il client un secondo dopo il server
-    //per sicurezza
-    n8_Client_App.Stop(Seconds(20.0));
+    n8_Client_App.Stop(Seconds(20.0)); //per sicurezza
     
     //Parte Sink onoff
     
-    uint16_t n5_portnumber=2300, n0_portnumber=7454;
+    uint16_t n5_portnumber = 2300, n0_portnumber = 7454;
     Address n5_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n5_portnumber));
     Address n0_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n0_portnumber));
     PacketSinkHelper n5_Sink("ns3::TcpSocketFactory", n5_sinkLocalAddress);
     PacketSinkHelper n0_Sink("ns3::UdpSocketFactory", n0_sinkLocalAddress);
     ApplicationContainer n5_sinkApp=n5_Sink.Install(n5);
     ApplicationContainer n0_sinkApp=n0_Sink.Install(n0);
+
     //Sink Application Code
     n5_sinkApp.Start(Seconds(0.0));
     n0_sinkApp.Start(Seconds(0.0));
@@ -375,8 +392,8 @@ int main(int argc, char* argv[]) {
     n9_helper.SetAttribute("Remote", n9_remoteAddress);
     n8_helper.SetAttribute("Remote", n8_remoteAddress);
     //OnOff Application Code
-    ApplicationContainer n9_Sender=n9_helper.Install(n9);
-    ApplicationContainer n8_Sender=n8_helper.Install(n8);
+    ApplicationContainer n9_Sender = n9_helper.Install(n9);
+    ApplicationContainer n8_Sender = n8_helper.Install(n8);
 
     n9_Sender.Start(Seconds(3.0));
     n8_Sender.Start(Seconds(5.0));
@@ -392,8 +409,8 @@ int main(int argc, char* argv[]) {
     
     // Enabling packet tracing for n0, n3, n7
     left_csma.EnablePcap("task1-2-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
-    n2n3_connection.EnablePcap("task1-2-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3 connection
-    right_csma.EnablePcap("task1-2-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one i added last
+    n2n3_connection.EnablePcap("task1-2-3.pcap", n2n3_container.Get(1), true, true); //n3 is the lastone on the n2n3_connection
+    right_csma.EnablePcap("task1-2-7.pcap", right_container.Get(2), true, true); //I'm getting the last one since 7 is the one added last
   }
 
   /**
