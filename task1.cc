@@ -47,7 +47,7 @@ NS_LOG_COMPONENT_DEFINE("Task_1_Team_25");
 int main(int argc, char* argv[]) {
   /**
    *
-   * Usage: ./ns3 run <pathtofolder>/task1.cc [--configuration=[0|1|2]] [--verbose]
+   * Usage: ./ns3 run <pathtofolder>/task1.cc -- [--configuration=[0|1|2]] [--verbose]
    *
    *
   */
