@@ -4,11 +4,11 @@
  * Network topology
  *
  *                        n4
- *                      X |  \
- *                     X  |   \
+ *                      / |  \
+ *                     /  |   \
  * n0   n1   n2 --- n3 -- n5 -- n7    n8     n9
- * |    |    |         \  |   X  |     |      |               (connection n3-n4 and n6-n7 removed due to an error)
- * ===========          \ |  X   ==============
+ * |    |    |         \  |   /  |     |      |               (connection n3-n4 and n6-n7 removed due to an error)
+ * ===========          \ |  /   ==============
  *     LAN                n6            LAN
  *
  *
@@ -79,16 +79,11 @@ int main(int argc, char* argv[]) {
   NS_LOG_INFO("Create nodes.");
 
   //Creating nodes
-  Ptr<Node> n0 = CreateObject<Node>();
-  Ptr<Node> n1 = CreateObject<Node>();
-  Ptr<Node> n2 = CreateObject<Node>();
+  NodeContainer left_nodes;
+  left_nodes.Create(3);
 
-  NodeContainer nodes_left(n0, n1, n2);
-
-  Ptr<Node> n8 = CreateObject<Node>();
-  Ptr<Node> n9 = CreateObject<Node>();
-
-  NodeContainer nodes_right(n8, n9); //node 7 will be added later
+  NodeContainer right_nodes;
+  right_nodes.Create(2);
 
   // Creating center hardware (STAR)
   PointToPointHelper starP2P;
@@ -97,19 +92,21 @@ int main(int argc, char* argv[]) {
   PointToPointStarHelper star(4, starP2P); //4 external nodes
 
   // Taking custom nodes for p2p connection (Get method return pointer to node)
+  Ptr<Node> n0 = left_nodes.Get(0);
+  Ptr<Node> n1 = left_nodes.Get(1);
+  Ptr<Node> n2 = left_nodes.Get(2);
+  Ptr<Node> n8 = right_nodes.Get(0);
+  Ptr<Node> n9 = right_nodes.Get(1);
   Ptr<Node> n5 = star.GetHub();
   Ptr<Node> n3 = star.GetSpokeNode(0);
   Ptr<Node> n4 = star.GetSpokeNode(1);
   Ptr<Node> n6 = star.GetSpokeNode(2);
-  Ptr<Node> n7 = star.GetSpokeNode(3); //pointer to n7 to be added to nodes_right
-  InternetStackHelper internet_helper;
-  internet_helper.Install(nodes_left);
-  internet_helper.Install(nodes_right); // Reversing Internet installation and n7 sharing to prevent internet installation twice on n7
-  star.InstallStack(internet_helper);
+  Ptr<Node> n7 = star.GetSpokeNode(3); //pointer to n7 to be added to right_nodes
 
-  // n7 sharing
-  NodeContainer shared(n7);
-  nodes_right.Add(shared); //added n7 to nodes_right
+  right_nodes.Add(n7); //adding n7 to the right lan connection
+
+  InternetStackHelper internet_helper;
+  internet_helper.Install(NodeContainer::GetGlobal()); //installing the stack on all nodes
 
   /**
    *
@@ -130,19 +127,19 @@ int main(int argc, char* argv[]) {
   /*
   * Creating this p2p connections:
   *   n2 - n3
-  *   n3 - n4  --> disabled due to an error
+  *   n3 - n4
   *   n3 - n6
   *   n4 - n7
-  *   n6 - n7  --> disabled due to an error
+  *   n6 - n7
   *
   */
   // Creating multiple containers for the p2p network installation
 
   NodeContainer n2_n3(n2, n3);
-  // NodeContainer n3_n4(n3, n4);   --> disabled due to an error
+  NodeContainer n3_n4(n3, n4);
   NodeContainer n3_n6(n3, n6);
   NodeContainer n4_n7(n4, n7);
-  // NodeContainer n6_n7(n6, n7);  --> disabled due to an error
+  NodeContainer n6_n7(n6, n7);
 
   //n2-n3 connection
   PointToPointHelper n2n3_connection;
@@ -160,13 +157,13 @@ int main(int argc, char* argv[]) {
    *
   */
 
-  NetDeviceContainer left_container = left_csma.Install(nodes_left);
-  NetDeviceContainer right_container = right_csma.Install(nodes_right);
+  NetDeviceContainer left_container = left_csma.Install(left_nodes);
+  NetDeviceContainer right_container = right_csma.Install(right_nodes);
   NetDeviceContainer n2n3_container = n2n3_connection.Install(n2_n3);
-  // NetDeviceContainer n3n4_container = l_connections.Install(n3_n4);  --> disabled due to an error
+  NetDeviceContainer n3n4_container = l_connections.Install(n3_n4);
   NetDeviceContainer n3n6_container = l_connections.Install(n3_n6);
   NetDeviceContainer n4n7_container = l_connections.Install(n4_n7);
-  // NetDeviceContainer n6n7_container = l_connections.Install(n6_n7);  --> disabled due to an error
+  NetDeviceContainer n6n7_container = l_connections.Install(n6_n7);
 
 
   /**
@@ -186,8 +183,8 @@ int main(int argc, char* argv[]) {
   n2n3_address.SetBase("10.1.1.0", "/30");
 
   //Ipv4 ptp connection between outer star nodes
-  // Ipv4AddressHelper n3n4_address;  --> disabled due to an error
-  // n3n4_address.SetBase("10.0.1.0", "/30");  --> disabled due to an error
+  Ipv4AddressHelper n3n4_address;
+  n3n4_address.SetBase("10.0.1.0", "/30");
 
   Ipv4AddressHelper n3n6_address;
   n3n6_address.SetBase("10.0.4.0", "/30");
@@ -195,8 +192,8 @@ int main(int argc, char* argv[]) {
   Ipv4AddressHelper n4n7_address;
   n4n7_address.SetBase("10.0.2.0", "/30");
 
-  // Ipv4AddressHelper n6n7_address;  --> disabled due to an error
-  // n6n7_address.SetBase("10.0.3.0", "/30");  --> disabled due to an error
+  Ipv4AddressHelper n6n7_address;
+  n6n7_address.SetBase("10.0.3.0", "/30");
 
   Ipv4AddressHelper star_address;
   star_address.SetBase("10.10.1.0", "/24");
@@ -209,10 +206,10 @@ int main(int argc, char* argv[]) {
   Ipv4InterfaceContainer right_interface = right_ipv4.Assign(right_container);
   Ipv4InterfaceContainer left_interface = left_ipv4.Assign(left_container);
   Ipv4InterfaceContainer n2n3_interface = n2n3_address.Assign(n2n3_container);
-  // Ipv4InterfaceContainer n3n4_interface = n3n4_address.Assign(n3n4_container);  --> disabled due to an error
+  Ipv4InterfaceContainer n3n4_interface = n3n4_address.Assign(n3n4_container);
   Ipv4InterfaceContainer n3n6_interface = n3n6_address.Assign(n3n6_container);
   Ipv4InterfaceContainer n4n7_interface = n4n7_address.Assign(n4n7_container);
-  // Ipv4InterfaceContainer n6n7_interface = n6n7_address.Assign(n6n7_container);  --> disabled due to an error
+  Ipv4InterfaceContainer n6n7_interface = n6n7_address.Assign(n6n7_container);
   star.AssignIpv4Addresses(star_address); //Ipv4 star connection
 
   //With this the all the nodes will ne able to reach the other reachables
@@ -247,10 +244,10 @@ int main(int argc, char* argv[]) {
     OnOffHelper clientHelper("ns3::TcpSocketFactory", Address());
     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    clientHelper.SetAttribute("PacketSize", UintegerValue(1300));   /*Ricontrollare grandezza dei pacchetti*/
+    clientHelper.SetAttribute("PacketSize", UintegerValue(1300));   /*Double check packet size*/
 
     ApplicationContainer sender;
-    AddressValue remoteAddress(InetSocketAddress(star.GetHubIpv4Address(3), port)); // 3 since it's from the pov of n7 
+    AddressValue remoteAddress(InetSocketAddress(star.GetHubIpv4Address(0), port));
     clientHelper.SetAttribute("Remote", remoteAddress);
     sender.Add(clientHelper.Install(n9));
 
