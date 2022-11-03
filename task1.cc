@@ -38,10 +38,10 @@
  *
  *    Fatto da: Group 25
  *    matricole:
- *      - 
- *      - 
- *      - 
- *      - 
+ *      - 1946083
+ *      - 1962183
+ *      - 1931976
+ *      - 1943235
  *
 */
 
@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
   */
   NS_LOG_INFO("Assign IP Addresses.");
   Ipv4AddressHelper left_ipv4; //Ipv4 left lan connection
-  left_ipv4.SetBase("192.168.1.0", "/24");
+  left_ipv4.SetBase("192.128.1.0", "/24");
 
   Ipv4AddressHelper right_ipv4; //Ipv4 right lan connection
   right_ipv4.SetBase("192.128.2.0", "/24");
@@ -237,6 +237,17 @@ int main(int argc, char* argv[]) {
   * star: n3, n4, n6, n7 (outer) - n5 (hub)
   * right: n8, n9, n7 (7 is the last one since it got added last. It is shared between star and right).
   *
+  *
+  *
+  *		ips: left 	192.128.1.x
+  *			 right	192.128.2.x
+  *			 star	10.10.x.y
+  *			 n2n3	10.1.1.x
+  *			 n3n4	10.0.1.x
+  *			 n4n7	10.0.2.x
+  *			 n7n6	10.0.3.x
+  *			 n3n6	10.0.4.x
+  *
   */
 
   // Ascii tracing must be done on client and servers only! It must be defined in the configuration part
@@ -269,7 +280,9 @@ int main(int argc, char* argv[]) {
 
     // configure tracing
     AsciiTraceHelper ascii;
+    NodeContainer n5_container; n5_container.Add(n5); //this is used to enable EnableAscii on a single node. It doesn't like one node itself
     right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n9.tr"), right_container.Get(1));
+    starP2P.EnableAscii(ascii.CreateFileStream("task1-0-n5.tr"), n5_container);
 
     // Enabling packet tracing for n0, n3, n7
     left_csma.EnablePcap("task1-0-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
@@ -395,11 +408,20 @@ int main(int argc, char* argv[]) {
     ApplicationContainer n9_Sender = n9_helper.Install(n9);
     ApplicationContainer n8_Sender = n8_helper.Install(n8);
 
+    char* testo = (char*) malloc(2560);
+    for(int i = 0; i<2553; i++) testo[i] = 0;
+    testo[2553] = '7';
+    testo[2554] = '6';
+    testo[2555] = 'c';
+    testo[2556] = '4';
+    testo[2557] = '3';
+    testo[2558] = '5';
+
     n9_Sender.Start(Seconds(3.0));
     n8_Sender.Start(Seconds(5.0));
     n9_Sender.Stop(Seconds(9.0));
     n8_Sender.Stop(Seconds(15.0));
-    
+
     AsciiTraceHelper ascii; //I create the helper for the ascii
     //star.EnableAscii(ascii.CreateFileStream("task1-2-n5.tr"),star.GetHub());  //I trace n5
     left_csma.EnableAscii(ascii.CreateFileStream("task1-2-n0.tr"),left_container.Get(0));  //I trace n0
