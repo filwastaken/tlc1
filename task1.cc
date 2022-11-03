@@ -338,7 +338,8 @@ int main(int argc, char* argv[]) {
     n8_Sender.Stop(Seconds(9.0));
     
     AsciiTraceHelper ascii;
-    //star.EnableAscii(ascii.CreateFileStream("task1-1-n5.tr"), star.GetHub());               //Tracing n5
+    NodeContainer n5_container; n5_container.Add(n5); //this is used to enable EnableAscii on a single node. It doesn't like one node itself
+    starP2P.EnableAscii(ascii.CreateFileStream("task1-1-n5.tr"), n5_container);              //Tracing n5
     left_csma.EnableAscii(ascii.CreateFileStream("task1-1-n0.tr"), left_container.Get(0));    //Tracing n0
     right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n9.tr"), right_container.Get(1));  //  "     n9
     right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n8.tr"), right_container.Get(0));  //  "     n8
@@ -416,6 +417,7 @@ int main(int argc, char* argv[]) {
     testo[2556] = '4';
     testo[2557] = '3';
     testo[2558] = '5';
+    n8_Client.SetFill(n8_Client_App.Get(0), testo);
 
     n9_Sender.Start(Seconds(3.0));
     n8_Sender.Start(Seconds(5.0));
@@ -423,7 +425,8 @@ int main(int argc, char* argv[]) {
     n8_Sender.Stop(Seconds(15.0));
 
     AsciiTraceHelper ascii; //I create the helper for the ascii
-    //star.EnableAscii(ascii.CreateFileStream("task1-2-n5.tr"),star.GetHub());  //I trace n5
+    NodeContainer n5_container; n5_container.Add(n5); //this is used to enable EnableAscii on a single node. It doesn't like one node itself
+    starP2P.EnableAscii(ascii.CreateFileStream("task1-2-n5.tr"),n5_container);  //I trace n5
     left_csma.EnableAscii(ascii.CreateFileStream("task1-2-n0.tr"),left_container.Get(0));  //I trace n0
     right_csma.EnableAscii(ascii.CreateFileStream("task1-2-n9.tr"), right_container.Get(1)); //I trace n9
     right_csma.EnableAscii(ascii.CreateFileStream("task1-2-n8.tr"), right_container.Get(0));  //I trace n8
