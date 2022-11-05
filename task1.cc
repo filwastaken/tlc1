@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
     
     n8_helper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
     n8_helper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    n8_helper.SetAttribute("PacketSize", UintegerValue(2500));
+    n8_helper.SetAttribute("PacketSize", UintegerValue(5000));
  
     
     AddressValue n9_remoteAddress(InetSocketAddress(star.GetHubIpv4Address(3), n5_portnumber)); //manda i dati all'indirizzo ip della stella di n5 da n7
