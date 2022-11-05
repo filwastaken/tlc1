@@ -317,16 +317,16 @@ int main(int argc, char* argv[]) {
     * TCP - sink on n0, 7457 port
     * TCP OnOff client on n9 {start_send : 5s, stop_send : 15s, packet_size : 2500bytes}
     * TCP OnOff client on n8 {start_send : 2s, stop_send : 9s, packet_size : 5000bytes}
-    * n9 -> n5    n8 -> n0
+    * n9 -> n5,    n8 -> n0
     */
 
     uint16_t n5_portnumber = 2300, n0_portnumber = 7457;
     Address n5_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n5_portnumber));
     Address n0_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n0_portnumber));
     PacketSinkHelper n5_sink("ns3::TcpSocketFactory", n5_sinkLocalAddress);
-    PacketSinkHelper n0_Sink("ns3::TcpSocketFactory", n0_sinkLocalAddress);
+    PacketSinkHelper n0_sink("ns3::TcpSocketFactory", n0_sinkLocalAddress);
     ApplicationContainer n5_sinkapp = n5_sink.Install(n5);
-    ApplicationContainer n0_sinkapp = n0_Sink.Install(n0);
+    ApplicationContainer n0_sinkapp = n0_sink.Install(n0);
     
     //Sink Application Code
     n5_sinkapp.Start(Seconds(0.0));
@@ -386,7 +386,8 @@ int main(int argc, char* argv[]) {
     n2_serverapp.Stop(Seconds(20.0));
     
     UdpEchoClientHelper n8_echo(left_interface.GetAddress(2), n2_port);
-    n8_echo.SetAttribute("Interval", TimeValue(Seconds(2.0))); 
+    n8_echo.SetAttribute("Interval", TimeValue(Seconds(2.0)));
+    n8_echo.SetAttribute("MaxPackets", UintegerValue(5)); //it will sends 5 packets every two seconds, starting at 3s
     n8_echo.SetAttribute("PacketSize", UintegerValue(2560));
     ApplicationContainer n8_client_app = n8_echo.Install(n8);
 
