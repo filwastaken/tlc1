@@ -307,7 +307,6 @@ int main(int argc, char* argv[]) {
     AsciiTraceHelper ascii;
     NodeContainer n5_container(n5); starP2P.EnableAscii(ascii.CreateFileStream("task1-0-n5.tr"), n5_container);
     right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n9.tr"), right_container.Get(1));
-    right_csma.EnableAscii(ascii.CreateFileStream("task1-0-n7.tr"), right_container.Get(2));
 
     // Enabling packet tracing for n0, n3, n7
     left_csma.EnablePcap("task1-0-0.pcap", left_container.Get(0), true, true); //n0 is the first one on left_csma
@@ -363,7 +362,7 @@ int main(int argc, char* argv[]) {
     n8_onoff.Stop(Seconds(9.0));
     
     AsciiTraceHelper ascii;
-    NodeContainer n5_container(n5); starP2P.EnableAscii(ascii.CreateFileStream("task1-2-n5.tr"), n5_container);
+    NodeContainer n5_container(n5); starP2P.EnableAscii(ascii.CreateFileStream("task1-1-n5.tr"), n5_container);
     left_csma.EnableAscii(ascii.CreateFileStream("task1-1-n0.tr"), left_container.Get(0));    //Tracing n0
     right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n9.tr"), right_container.Get(1));  //  "     n9
     right_csma.EnableAscii(ascii.CreateFileStream("task1-1-n8.tr"), right_container.Get(0));  //  "     n8
