@@ -35,13 +35,14 @@
  *    TCP sink n9 -> n5
  *    UDP sink n8 -> n0
  *
- *
- *    Fatto da: Group 25
+ * 
+ * 
+ *    Fatto da: Team 25
  *    matricole:
- *      - 1946083
- *      - 1962183
- *      - 1931976
- *      - 1943235
+ *      - Simone Federico Lagana 1946083
+ *      - Filippo Guerra 1931976
+ *      - Giulio Di Gregorio 1943235
+ *      - Marika Fuccio 1962183
  *
 */
 
@@ -405,7 +406,7 @@ int main(int argc, char* argv[]) {
     n8_client_app.Start(Seconds(3.0));
     n8_client_app.Stop(Seconds(10.0)); // it won't send anything between 9 and 10
     
-    //Sink on/off
+    //Sink On/off
     uint16_t n5_portnumber = 2300, n0_portnumber = 7454;
     Address n5_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n5_portnumber));
     Address n0_sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(),n0_portnumber));
